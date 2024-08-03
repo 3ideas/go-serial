@@ -11,7 +11,7 @@ import (
 	"log"
 	"time"
 
-	"go.bug.st/serial"
+	"github.com/3ideas/go-serial"
 )
 
 func ExamplePort_GetModemStatusBits() {
