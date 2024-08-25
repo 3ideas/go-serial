@@ -64,18 +64,39 @@ func (port *windowsPort) Close() error {
 	return windows.CloseHandle(port.handle)
 }
 
+func f(i int) {
+	if i--; i == 0 {
+		return
+	}
+	f(i)
+}
+
 func (port *windowsPort) Read(p []byte) (int, error) {
 	var readed uint32
-	ev, err := createOverlappedEvent()
-	if err != nil {
-		return 0, err
-	}
-	defer windows.CloseHandle(ev.HEvent)
+	// ev, err := createOverlappedEvent()
+	// if err != nil {
+	// 	return 0, err
+	// }
 
-	err = windows.ReadFile(port.handle, p, &readed, ev)
-	if err == windows.ERROR_IO_PENDING {
-		err = windows.GetOverlappedResult(port.handle, ev, &readed, true)
+	// eh := ev.HEvent
+	// s := fmt.Sprintf("0x%x", &readed)
+	// f(10000)
+	// defer windows.CloseHandle(eh)
+
+	err := windows.ReadFile(port.handle, p, &readed, nil)
+	if err != nil {
+		err = windows.GetLastError()
 	}
+
+	// errorText := windows.FormatMessage()
+	// s1 := fmt.Sprintf("0x%x", &readed)
+	// if s != s1 {
+	// 	fmt.Println("readed address changed")
+	// }
+	// if err == windows.ERROR_IO_PENDING || err == nil { // added dummy condition to see what calling GetOverlappedResult does
+	// if err == windows.ERROR_IO_PENDING {
+	// 	err = windows.GetOverlappedResult(port.handle, ev, &readed, true)
+	// }
 	switch err {
 	case nil:
 		// operation completed successfully
@@ -96,16 +117,19 @@ func (port *windowsPort) Read(p []byte) (int, error) {
 
 func (port *windowsPort) Write(p []byte) (int, error) {
 	var writed uint32
-	ev, err := createOverlappedEvent()
+	// ev, err := createOverlappedEvent()
+	// if err != nil {
+	// 	return 0, err
+	// }
+	// defer func() { windows.CloseHandle(ev.HEvent) }()
+	err := windows.WriteFile(port.handle, p, &writed, nil)
 	if err != nil {
-		return 0, err
+		err = windows.GetLastError()
 	}
-	defer windows.CloseHandle(ev.HEvent)
-	err = windows.WriteFile(port.handle, p, &writed, ev)
-	if err == windows.ERROR_IO_PENDING {
-		// wait for write to complete
-		err = windows.GetOverlappedResult(port.handle, ev, &writed, true)
-	}
+	// if err == windows.ERROR_IO_PENDING {
+	// 	// wait for write to complete
+	// 	err = windows.GetOverlappedResult(port.handle, ev, &writed, true)
+	// }
 	return int(writed), err
 }
 
@@ -311,10 +335,10 @@ func (port *windowsPort) Break(d time.Duration) error {
 	return nil
 }
 
-func createOverlappedEvent() (*windows.Overlapped, error) {
-	h, err := windows.CreateEvent(nil, 1, 0, nil)
-	return &windows.Overlapped{HEvent: h}, err
-}
+// func createOverlappedEvent() (*windows.Overlapped, error) {
+// 	h, err := windows.CreateEvent(nil, 1, 0, nil)
+// 	return &windows.Overlapped{HEvent: h}, err
+// }
 
 func nativeOpen(portName string, mode *Mode) (*windowsPort, error) {
 	portName = "\\\\.\\" + portName
@@ -327,7 +351,7 @@ func nativeOpen(portName string, mode *Mode) (*windowsPort, error) {
 		windows.GENERIC_READ|windows.GENERIC_WRITE,
 		0, nil,
 		windows.OPEN_EXISTING,
-		windows.FILE_FLAG_OVERLAPPED,
+		windows.FILE_ATTRIBUTE_NORMAL,
 		0)
 	if err != nil {
 		switch err {
