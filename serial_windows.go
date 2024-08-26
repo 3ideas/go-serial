@@ -64,39 +64,14 @@ func (port *windowsPort) Close() error {
 	return windows.CloseHandle(port.handle)
 }
 
-func f(i int) {
-	if i--; i == 0 {
-		return
-	}
-	f(i)
-}
-
 func (port *windowsPort) Read(p []byte) (int, error) {
 	var readed uint32
-	// ev, err := createOverlappedEvent()
-	// if err != nil {
-	// 	return 0, err
-	// }
-
-	// eh := ev.HEvent
-	// s := fmt.Sprintf("0x%x", &readed)
-	// f(10000)
-	// defer windows.CloseHandle(eh)
 
 	err := windows.ReadFile(port.handle, p, &readed, nil)
 	if err != nil {
 		err = windows.GetLastError()
 	}
 
-	// errorText := windows.FormatMessage()
-	// s1 := fmt.Sprintf("0x%x", &readed)
-	// if s != s1 {
-	// 	fmt.Println("readed address changed")
-	// }
-	// if err == windows.ERROR_IO_PENDING || err == nil { // added dummy condition to see what calling GetOverlappedResult does
-	// if err == windows.ERROR_IO_PENDING {
-	// 	err = windows.GetOverlappedResult(port.handle, ev, &readed, true)
-	// }
 	switch err {
 	case nil:
 		// operation completed successfully
@@ -117,19 +92,12 @@ func (port *windowsPort) Read(p []byte) (int, error) {
 
 func (port *windowsPort) Write(p []byte) (int, error) {
 	var writed uint32
-	// ev, err := createOverlappedEvent()
-	// if err != nil {
-	// 	return 0, err
-	// }
-	// defer func() { windows.CloseHandle(ev.HEvent) }()
+
 	err := windows.WriteFile(port.handle, p, &writed, nil)
 	if err != nil {
 		err = windows.GetLastError()
 	}
-	// if err == windows.ERROR_IO_PENDING {
-	// 	// wait for write to complete
-	// 	err = windows.GetOverlappedResult(port.handle, ev, &writed, true)
-	// }
+
 	return int(writed), err
 }
 
